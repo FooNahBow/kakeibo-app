@@ -85,7 +85,7 @@ export async function initializeSpreadsheet() {
     await fetch(
       `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET}!A1:J1?valueInputOption=USER_ENTERED`,
       {
-        method: 'PUT',
+        method: 'POST',
         headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ values: headers }),
       }
