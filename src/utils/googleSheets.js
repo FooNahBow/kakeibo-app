@@ -38,3 +38,4 @@ export function initGoogleAuth(onSignIn) {
 export function signIn() {}
 export function signOut() {}
 export const isSignedIn = () => true;
+export function initializeSpreadsheet() {}
