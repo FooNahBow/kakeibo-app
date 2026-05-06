@@ -61,18 +61,20 @@ export default function CsvImport({ onImportComplete }) {
         onDrop={handleDrop}
         style={{
           border: `2px dashed ${isDragging ? '#2563eb' : '#4a7fa5'}`,
-          borderRadius: '12px',
-          padding: '40px 24px',
+          borderRadius: '8px',
+          padding: '10px 16px',
           textAlign: 'center',
           cursor: 'pointer',
           background: isDragging ? '#dbeafe' : '#f8fafc',
+          display: 'flex', alignItems: 'center', gap: 16,
         }}
       >
         <input id="csv-file-input" type="file" accept=".csv" onChange={handleFileSelect} style={{ display: 'none' }} />
-        <div style={{ fontSize: '40px', marginBottom: '12px' }}>📥</div>
-        <p style={{ fontSize: '16px', fontWeight: '600', margin: '0 0 6px' }}>CSVファイルをドラッグ&ドロップ</p>
-        <p style={{ fontSize: '13px', color: '#64748b', margin: '0 0 8px' }}>またはクリックしてファイルを選択</p>
-        <p style={{ fontSize: '11px', color: '#94a3b8', margin: 0 }}>マネーフォワードMEのCSVに対応</p>
+        <div style={{ fontSize: '20px' }}>📥</div>
+        <div>
+          <p style={{ fontSize: '12px', fontWeight: '600', margin: '0 0 1px' }}>CSVをドラッグ&ドロップ</p>
+          <p style={{ fontSize: '10px', color: '#94a3b8', margin: 0 }}>クリックでファイル選択（マネーフォワードME）</p>
+        </div>
       </div>
       {status && status !== 'loading' && (
         <div style={{

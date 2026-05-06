@@ -14,12 +14,14 @@ export default function App() {
   const [transactions, setTransactions] = useState([]);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [loading, setLoading] = useState(false);
+  const [signedIn, setSignedIn] = useState(false);
 
   const [savingsPlans, setSavingsPlans] = useState(() => { try { return JSON.parse(localStorage.getItem('kakeibo_savings') || '[]'); } catch { return []; } });
   const [categories, setCategories] = useState(() => { try { const s = localStorage.getItem("kakeibo_categories"); return s ? JSON.parse(s) : []; } catch { return []; } });
 
   useEffect(() => {
     initGoogleAuth(async () => {
+      setSignedIn(true);
       await initializeSpreadsheet();
       await loadTransactions();
     });
@@ -44,10 +46,14 @@ export default function App() {
   };
 
   const btnStyle = (active) => ({
-    padding: '12px 16px', border: 'none', background: 'none', fontSize: '12px',
-    cursor: 'pointer', borderBottom: active ? '2px solid #1e3a5f' : '2px solid transparent',
-    color: active ? '#1e3a5f' : '#64748b', fontWeight: active ? '600' : 'normal',
-    whiteSpace: 'nowrap', flexShrink: 0, borderRadius: '6px',
+    padding: '10px 16px', border: 'none', fontSize: '12px',
+    cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
+    borderBottom: active ? '3px solid #1e3a5f' : '3px solid transparent',
+    color: active ? '#1e3a5f' : '#64748b',
+    fontWeight: active ? '700' : 'normal',
+    background: active ? '#f0f4f8' : 'none',
+    borderRadius: '6px 6px 0 0',
+    transition: 'all 0.15s',
   });
 
   return (
@@ -57,30 +63,74 @@ export default function App() {
           <span style={{ fontSize: '24px' }}>💰</span>
           <h1 style={{ fontSize: '18px', fontWeight: '700', margin: 0 }}>家計管理</h1>
         </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {signedIn ? (
+            <>
+              <label
+                onDragOver={e => { e.preventDefault(); e.currentTarget.style.background='rgba(255,255,255,0.25)'; }}
+                onDragLeave={e => { e.currentTarget.style.background='rgba(255,255,255,0.1)'; }}
+                onDrop={async e => {
+                  e.preventDefault();
+                  e.currentTarget.style.background='rgba(255,255,255,0.1)';
+                  const file = e.dataTransfer.files[0];
+                  if (!file) return;
+                  const { decodeShiftJIS, parseCSV, filterDuplicates } = await import('./utils/csvParser');
+                  const { getExistingIds, appendTransactions } = await import('./utils/googleSheets');
+                  const buffer = await file.arrayBuffer();
+                  const text = await decodeShiftJIS(buffer);
+                  const transactions = parseCSV(text);
+                  const existingIds = await getExistingIds();
+                  const newTx = filterDuplicates(transactions, existingIds);
+                  if (newTx.length > 0) { await appendTransactions(newTx); loadTransactions(); }
+                  alert(newTx.length > 0 ? `${newTx.length}件インポートしました` : '新しいデータはありませんでした');
+                }}
+                style={{ padding: '10px 32px', fontSize: 13, borderRadius: 6, border: '1px dashed rgba(255,255,255,0.5)', background: 'rgba(255,255,255,0.1)', color: '#fff', cursor: 'pointer', fontWeight: 600, display:'flex', alignItems:'center', gap:8, transition:'background 0.15s', minWidth: 200, justifyContent:'center' }}>
+                📥 CSVをドラッグ&ドロップ / クリックして選択
+                <input type="file" accept=".csv" style={{ display:'none' }} onChange={async (e) => {
+                  const file = e.target.files[0];
+                  if (!file) return;
+                  const { decodeShiftJIS, parseCSV, filterDuplicates } = await import('./utils/csvParser');
+                  const { getExistingIds, appendTransactions } = await import('./utils/googleSheets');
+                  const buffer = await file.arrayBuffer();
+                  const text = await decodeShiftJIS(buffer);
+                  const transactions = parseCSV(text);
+                  const existingIds = await getExistingIds();
+                  const newTx = filterDuplicates(transactions, existingIds);
+                  if (newTx.length > 0) { await appendTransactions(newTx); loadTransactions(); }
+                  alert(newTx.length > 0 ? `${newTx.length}件インポートしました` : '新しいデータはありませんでした');
+                  e.target.value = '';
+                }} />
+              </label>
+              <span style={{ fontSize: 11, color: '#93c5fd' }}>✓ Google連携済み</span>
+              <button onClick={() => { signOut(); setSignedIn(false); }}
+                style={{ padding: '5px 12px', fontSize: 11, borderRadius: 6, border: 'none', background: 'rgba(255,255,255,0.15)', color: '#fff', cursor: 'pointer' }}>
+                サインアウト
+              </button>
+            </>
+          ) : (
+            <button onClick={() => signIn().then(() => { setSignedIn(true); initializeSpreadsheet(); loadTransactions(); })}
+              style={{ padding: '5px 12px', fontSize: 11, borderRadius: 6, border: 'none', background: '#2563eb', color: '#fff', cursor: 'pointer', fontWeight: 600 }}>
+              Googleでサインイン
+            </button>
+          )}
+        </div>
       </header>
 
       <nav style={{ display: 'flex', background: '#fff', borderBottom: '1px solid #e2e8f0', padding: '0 16px', overflowX: 'auto', flexWrap: 'nowrap', minHeight: 44, borderRadius: '0 0 12px 12px' }}>
         <button style={btnStyle(activeTab === 'dashboard')} onClick={() => setActiveTab('dashboard')}>📊 ダッシュボード</button>
-        <button style={btnStyle(activeTab === 'import')} onClick={() => setActiveTab('import')}>📥 インポート</button>
-        <button style={btnStyle(activeTab === 'list')} onClick={() => { setActiveTab('list'); loadTransactions(); }}>📋 取引一覧</button>
-        <button style={btnStyle(activeTab === 'budget')} onClick={() => setActiveTab('budget')}>🎯 予算管理</button>
-        <button style={btnStyle(activeTab === 'category')} onClick={() => setActiveTab('category')}>🏷️ カテゴリ</button>
         <button style={btnStyle(activeTab === 'savings')} onClick={() => setActiveTab('savings')}>💰 積立管理</button>
+        <button style={btnStyle(activeTab === 'category')} onClick={() => setActiveTab('category')}>🏷️ カテゴリ</button>
+        <button style={btnStyle(activeTab === 'list')} onClick={() => { setActiveTab('list'); loadTransactions(); }}>📋 取引一覧</button>
       </nav>
 
       <main style={{ padding: '24px', minHeight: 'calc(100vh - 112px)' }}>
         {activeTab === 'dashboard' && (
-          <Dashboard transactions={transactions} budgets={{}} categories={categories} loading={loading} />
-        )}
-        {activeTab === 'import' && (
-          <div style={{ background: '#fff', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-            <h2 style={{ fontSize: '16px', fontWeight: '700', color: '#1e3a5f', marginBottom: '8px' }}>CSVインポート</h2>
-            <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '20px', lineHeight: '1.6' }}>
-              マネーフォワードMEからエクスポートしたCSVをドラッグ&ドロップしてください。
-            </p>
-            <CsvImport onImportComplete={handleImportComplete} />
+          <div>
+
+            <Dashboard transactions={transactions} budgets={{}} categories={categories} loading={loading} />
           </div>
         )}
+
         {activeTab === 'list' && (
           <div style={{ background: '#fff', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
@@ -90,12 +140,7 @@ export default function App() {
             {loading ? <div style={{ textAlign: 'center', padding: '40px', color: '#94a3b8' }}>読み込み中...</div> : <TransactionList transactions={transactions} savingsPlans={savingsPlans} />}
           </div>
         )}
-        {activeTab === 'budget' && (
-          <div style={{ background: '#fff', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-            <h2 style={{ fontSize: '16px', fontWeight: '700', color: '#1e3a5f', marginBottom: '16px' }}>予算管理</h2>
-            <BudgetManager transactions={transactions} categories={categories} setCategories={saveCategories} />
-          </div>
-        )}
+
         {activeTab === 'savings' && (
           <div style={{ background: '#fff', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
             <SavingsManager categories={categories} />
@@ -104,7 +149,7 @@ export default function App() {
         {activeTab === 'category' && (
           <div style={{ background: '#fff', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
             <h2 style={{ fontSize: '16px', fontWeight: '700', color: '#1e3a5f', marginBottom: '16px' }}>カテゴリ管理</h2>
-            <CategoryManager categories={categories} setCategories={saveCategories} />
+            <CategoryManager categories={categories} setCategories={saveCategories} transactions={transactions} />
           </div>
         )}
       </main>

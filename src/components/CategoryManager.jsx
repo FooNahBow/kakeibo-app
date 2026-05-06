@@ -24,7 +24,7 @@ const DEFAULT_CATEGORIES = [
 
 const toSubObj = (s) => typeof s === "string" ? { name: s, budget: 0 } : s;
 
-function SortableCategory({ cat, editing, setEditing, updateBudget, updateSubBudget, addSubcategory, deleteSubcategory, deleteCategory, newSubcat, setNewSubcat }) {
+function SortableCategory({ cat, editing, setEditing, updateBudget, updateSubBudget, addSubcategory, deleteSubcategory, deleteCategory, newSubcat, setNewSubcat, getSpent }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: cat.id });
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
 
@@ -39,8 +39,15 @@ function SortableCategory({ cat, editing, setEditing, updateBudget, updateSubBud
           <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: cat.color, display: 'inline-block' }} />
         </div>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <input type="number" placeholder="月予算" value={cat.budget || ''} onChange={e => updateBudget(cat.id, e.target.value)}
-            style={{ width: '90px', padding: '4px 8px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '12px' }} />
+          <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:2}}>
+              <div style={{display:'flex',alignItems:'center',gap:6}}>
+                <span style={{fontSize:11,color:'#94a3b8'}}>実績</span>
+                <span style={{fontSize:12,fontWeight:600,color:cat.budget>0&&getSpent(cat.name)>cat.budget?'#dc2626':'#1e293b'}}>¥{getSpent(cat.name).toLocaleString()}</span>
+                {cat.budget>0 && <span style={{fontSize:11,color:'#94a3b8'}}>/ ¥{cat.budget.toLocaleString()}</span>}
+              </div>
+              <input type="number" placeholder="月予算" value={cat.budget || ''} onChange={e => updateBudget(cat.id, e.target.value)}
+                style={{ width: '90px', padding: '4px 8px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '12px' }} />
+            </div>
           <button onClick={() => setEditing(editing === cat.id ? null : cat.id)}
             style={{ padding: '4px 10px', background: '#f1f5f9', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', color: '#475569' }}>
             {editing === cat.id ? '閉じる' : 'サブカテゴリ'}
@@ -93,7 +100,13 @@ function SortableCategory({ cat, editing, setEditing, updateBudget, updateSubBud
   );
 }
 
-export default function CategoryManager({ categories, setCategories }) {
+export default function CategoryManager({ categories, setCategories, transactions = [] }) {
+  const currentMonth = new Date().toISOString().slice(0, 7);
+  const monthlyTx = transactions.filter(t => {
+    if (!t.日付 || String(t.計算対象) !== "1" || t.内容 === "振替") return false;
+    return t.日付.slice(0, 7) === currentMonth;
+  });
+  const getSpent = (catName) => Math.abs(monthlyTx.filter(t => t.大項目 === catName && parseInt(t.金額) < 0).reduce((s, t) => s + (parseInt(t.金額)||0), 0));
   const [cats, setCats] = useState((categories.length > 0 ? categories : DEFAULT_CATEGORIES).map(c => ({ ...c, subcategories: (c.subcategories || []).map(toSubObj) })));
   const [editing, setEditing] = useState(null);
   const [newCat, setNewCat] = useState({ name: '', icon: '📦', color: '#2563eb', budget: 0 });
@@ -178,6 +191,7 @@ export default function CategoryManager({ categories, setCategories }) {
               deleteCategory={deleteCategory}
               newSubcat={newSubcat}
               setNewSubcat={setNewSubcat}
+              getSpent={getSpent}
             />
           ))}
         </SortableContext>
