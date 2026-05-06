@@ -208,9 +208,8 @@ function PlanCard({ plan, now, onEdit, onDelete }) {
   const linkedTotal = linkedTx.reduce((s, t) => s + Math.abs(parseInt(t.金額) || 0), 0);
   const isDone = plan.endMonth < now;
   const isActive = !isDone && plan.startMonth <= now;
-  const passedMonths = plan.months.filter(m => m <= now);
-  const progress = plan.months.length > 0 ? Math.round(passedMonths.length / plan.months.length * 100) : 0;
-  const accumulated = passedMonths.reduce((s, m) => s + (plan.monthly[m] || 0), 0);
+  const accumulated = linkedTotal;
+  const progress = plan.totalAmount > 0 ? Math.round(accumulated / plan.totalAmount * 100) : 0;
   const statusColor = isDone ? "#0ca678" : isActive ? "#1e3a5f" : "#868e96";
   const statusLabel = isDone ? "完了" : isActive ? "積立中" : "予定";
   const btnSecondary = { padding: "6px 14px", borderRadius: 6, border: "1px solid #dee2e6", background: "#fff", color: "#495057", fontSize: 12, fontFamily: "inherit", cursor: "pointer", fontWeight: 500 };
@@ -234,7 +233,7 @@ function PlanCard({ plan, now, onEdit, onDelete }) {
       {!isDone && (
         <div style={{ marginTop: 12 }}>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#888", marginBottom: 4 }}>
-            <span>計上済み {fmtYen(accumulated)}</span>
+            <span>貯まった額 {fmtYen(accumulated)}</span>
             <span>残り {fmtYen(plan.totalAmount - accumulated)}　{progress}%</span>
           </div>
           <div style={{ height: 6, background: "#e9ecef", borderRadius: 999, overflow: "hidden" }}>
