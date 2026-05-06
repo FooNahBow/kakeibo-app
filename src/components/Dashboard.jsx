@@ -20,9 +20,17 @@ export default function Dashboard({ transactions, budgets, categories, loading }
   const income  = activeTx.filter(t => t.金額 > 0).reduce((s,t) => s + (parseInt(t.金額)||0), 0);
   const expense = Math.abs(activeTx.filter(t => t.金額 < 0).reduce((s,t) => s + (parseInt(t.金額)||0), 0));
   const balance = income - expense;
+  const isYotei = (t) => t.中項目 === '先行入力';
+  const realTx = activeTx.filter(t => t.金額 < 0 && !isYotei(t));
+  const budgetTotal = (categories||[]).reduce((s,c) => s + (c.budget||0), 0);
+  const noBudgetExpense = Math.abs(realTx.filter(t => {
+    const cat = (categories||[]).find(c => c.name === t.大項目);
+    return !cat || !cat.budget;
+  }).reduce((s,t) => s + (parseInt(t.金額)||0), 0));
+  const freeAmount = income - budgetTotal - noBudgetExpense;
 
   const catTotals = {};
-  activeTx.filter(t => t.金額 < 0).forEach(t => {
+  activeTx.filter(t => t.金額 < 0 && !isYotei(t)).forEach(t => {
     const cat = t.大項目 || 'その他';
     catTotals[cat] = (catTotals[cat] || 0) + Math.abs(parseInt(t.金額)||0);
   });
@@ -41,7 +49,10 @@ export default function Dashboard({ transactions, budgets, categories, loading }
     .filter(([cat]) => !MAIN_CATS.includes(cat))
     .sort((a,b) => b[1]-a[1]);
 
-  const sortedCats = Object.entries(catTotals).sort((a,b) => b[1]-a[1]);
+  // 予算設定済みカテゴリは実支出¥0でも表示
+  const budgetCats = (categories||[]).filter(c => c.budget > 0).map(c => c.name);
+  const allCatNames = [...new Set([...budgetCats, ...Object.keys(catTotals)])];
+  const sortedCats = allCatNames.map(name => [name, catTotals[name] || 0]).sort((a,b) => b[1]-a[1]);
   const getCatBudget = (name) => (categories||[]).find(c=>c.name===name)?.budget || 0;
   const maxAmount = sortedCats[0]?.[1] || 1;
 
@@ -103,6 +114,19 @@ export default function Dashboard({ transactions, budgets, categories, loading }
               return `集計期間：${fmt(start)} 〜 ${fmt(end)}`;
             })()
         }
+      </div>
+      <div style={{background:'#fff',borderRadius:'12px',padding:'16px 20px',boxShadow:'0 1px 4px rgba(0,0,0,0.06)',marginBottom:'12px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+        <div>
+          <p style={{fontSize:'11px',color:'#94a3b8',margin:'0 0 4px'}}>自由に使える額</p>
+          <p style={{fontSize:'28px',fontWeight:'700',color:freeAmount>=0?'#16a34a':'#dc2626',margin:0}}>
+            {freeAmount>=0?'':'-'}¥{Math.abs(freeAmount).toLocaleString()}
+          </p>
+        </div>
+        <div style={{fontSize:'12px',color:'#94a3b8',textAlign:'right',lineHeight:1.8}}>
+          <div>収入 ¥{income.toLocaleString()}</div>
+          <div>− 予算合計 ¥{budgetTotal.toLocaleString()}</div>
+          <div>− 予算外支出 ¥{noBudgetExpense.toLocaleString()}</div>
+        </div>
       </div>
       <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'16px',marginBottom:'20px'}}>
         {[{label:'収入',value:income,color:'#2563eb'},{label:'支出',value:expense,color:'#dc2626'},{label:'収支',value:balance,color:balance>=0?'#16a34a':'#dc2626'}].map(({label,value,color}) => (

@@ -119,7 +119,7 @@ export default function App() {
       <nav style={{ display: 'flex', background: '#fff', borderBottom: '1px solid #e2e8f0', padding: '0 16px', overflowX: 'auto', flexWrap: 'nowrap', minHeight: 44, borderRadius: '0 0 12px 12px' }}>
         <button style={btnStyle(activeTab === 'dashboard')} onClick={() => setActiveTab('dashboard')}>📊 ダッシュボード</button>
         <button style={btnStyle(activeTab === 'savings')} onClick={() => setActiveTab('savings')}>💰 積立管理</button>
-        <button style={btnStyle(activeTab === 'category')} onClick={() => setActiveTab('category')}>🏷️ カテゴリ</button>
+        <button style={btnStyle(activeTab === 'category')} onClick={() => setActiveTab('category')}>🏷️ カテゴリ・予算</button>
         <button style={btnStyle(activeTab === 'list')} onClick={() => { setActiveTab('list'); loadTransactions(); }}>📋 取引一覧</button>
       </nav>
 
@@ -148,7 +148,7 @@ export default function App() {
         )}
         {activeTab === 'category' && (
           <div style={{ background: '#fff', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-            <h2 style={{ fontSize: '16px', fontWeight: '700', color: '#1e3a5f', marginBottom: '16px' }}>カテゴリ管理</h2>
+            <h2 style={{ fontSize: '16px', fontWeight: '700', color: '#1e3a5f', marginBottom: '16px' }}>カテゴリ・予算管理</h2>
             <CategoryManager categories={categories} setCategories={saveCategories} transactions={transactions} />
           </div>
         )}

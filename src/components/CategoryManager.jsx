@@ -20,6 +20,7 @@ const DEFAULT_CATEGORIES = [
   { id: 14, name: '特別な支出', icon: '⭐', color: '#dc2626', subcategories: [], budget: 0, isDefault: true },
   { id: 15, name: '税・社会保障', icon: '🏛️', color: '#475569', subcategories: [], budget: 0, isDefault: true },
   { id: 16, name: '自動車',    icon: '🚗', color: '#854d0e', subcategories: [], budget: 0, isDefault: true },
+  { id: 17, name: '現金・カード', icon: '💳', color: '#0f766e', subcategories: [], budget: 0, isDefault: true },
 ];
 
 const toSubObj = (s) => typeof s === "string" ? { name: s, budget: 0 } : s;
@@ -45,7 +46,7 @@ function SortableCategory({ cat, editing, setEditing, updateBudget, updateSubBud
                 <span style={{fontSize:12,fontWeight:600,color:cat.budget>0&&getSpent(cat.name)>cat.budget?'#dc2626':'#1e293b'}}>¥{getSpent(cat.name).toLocaleString()}</span>
                 {cat.budget>0 && <span style={{fontSize:11,color:'#94a3b8'}}>/ ¥{cat.budget.toLocaleString()}</span>}
               </div>
-              <input type="number" placeholder="月予算" value={cat.budget || ''} onChange={e => updateBudget(cat.id, e.target.value)}
+              <input type="number" placeholder="月予算" value={cat.budget === 0 ? '0' : cat.budget || ''} onChange={e => updateBudget(cat.id, e.target.value)}
                 style={{ width: '90px', padding: '4px 8px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '12px' }} />
             </div>
           <button onClick={() => setEditing(editing === cat.id ? null : cat.id)}
