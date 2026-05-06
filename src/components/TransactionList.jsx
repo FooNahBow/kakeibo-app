@@ -66,8 +66,8 @@ export default function TransactionList({ transactions }) {
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
                   <span style={{ fontSize: '14px', fontWeight: '600', color: amount.color }}>{amount.text}</span>
                   <div style={{ display: 'flex', gap: '4px' }}>
-                    {t.大項目 && <span style={{ fontSize: '10px', padding: '2px 6px', borderRadius: '4px', background: '#eff6ff', color: '#2563eb' }}>{t.大項目}</span>}
-                    {t.中項目 && <span style={{ fontSize: '10px', padding: '2px 6px', borderRadius: '4px', background: '#f0fdf4', color: '#16a34a' }}>{t.中項目}</span>}
+                    {t.内容 !== '振替' && t.大項目 && <span style={{ fontSize: '10px', padding: '2px 6px', borderRadius: '4px', background: '#eff6ff', color: '#2563eb' }}>{t.大項目}</span>}
+                    {t.内容 !== '振替' && t.中項目 && <span style={{ fontSize: '10px', padding: '2px 6px', borderRadius: '4px', background: '#f0fdf4', color: '#16a34a' }}>{t.中項目}</span>}
                   </div>
                 </div>
               </div>

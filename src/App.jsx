@@ -13,7 +13,7 @@ export default function App() {
   const [transactions, setTransactions] = useState([]);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [loading, setLoading] = useState(false);
-  const [budgets, setBudgets] = useState(() => { try { const s = localStorage.getItem("kakeibo_budgets"); return s ? JSON.parse(s) : {}; } catch { return {}; } });
+
   const [categories, setCategories] = useState(() => { try { const s = localStorage.getItem("kakeibo_categories"); return s ? JSON.parse(s) : []; } catch { return []; } });
 
   useEffect(() => {
@@ -33,7 +33,7 @@ export default function App() {
     }
   };
 
-  const saveBudgets = (b) => { setBudgets(b); try { localStorage.setItem("kakeibo_budgets", JSON.stringify(b)); } catch {} };
+  const saveBudgets = (cats) => { saveCategories(cats); };
   const saveCategories = (cats) => { setCategories(cats); try { localStorage.setItem("kakeibo_categories", JSON.stringify(cats)); } catch {} };
   const handleImportComplete = () => {
     loadTransactions();
@@ -65,7 +65,7 @@ export default function App() {
 
       <main style={{ padding: '24px' }}>
         {activeTab === 'dashboard' && (
-          <Dashboard transactions={transactions} budgets={budgets} categories={categories} loading={loading} />
+          <Dashboard transactions={transactions} budgets={{}} categories={categories} loading={loading} />
         )}
         {activeTab === 'import' && (
           <div style={{ background: '#fff', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
@@ -88,7 +88,7 @@ export default function App() {
         {activeTab === 'budget' && (
           <div style={{ background: '#fff', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
             <h2 style={{ fontSize: '16px', fontWeight: '700', color: '#1e3a5f', marginBottom: '16px' }}>予算管理</h2>
-            <BudgetManager transactions={transactions} budgets={budgets} setBudgets={saveBudgets} categories={categories} />
+            <BudgetManager transactions={transactions} categories={categories} setCategories={saveCategories} />
           </div>
         )}
         {activeTab === 'category' && (
@@ -102,13 +102,13 @@ export default function App() {
   );
 }
 
-function BudgetManager({ transactions, budgets, setBudgets, categories }) {
+function BudgetManager({ transactions, categories, setCategories }) {
   const currentMonth = new Date().toISOString().slice(0, 7);
   const monthlyTransactions = transactions.filter(t => isInMonth(t.日付, currentMonth) && parseInt(t.金額) < 0 && String(t.計算対象) === "1" && t.内容 !== "振替");
   const usedCats = [...new Set(monthlyTransactions.map(t => t.大項目).filter(Boolean))];
   const fixedCats = (categories || []).filter(c => c.budget > 0).map(c => c.name);
   const allCats = [...new Set([...fixedCats, ...usedCats])];
-  const getCatBudget = (cat) => { const found = (categories || []).find(c => c.name === cat); return found?.budget || budgets[cat] || 0; };
+  const getCatBudget = (cat) => { const found = (categories || []).find(c => c.name === cat); return found?.budget || 0; };
   const getSpent = (category) => Math.abs(monthlyTransactions.filter(t => t.大項目 === category).reduce((sum, t) => sum + (parseInt(t.金額) || 0), 0));
   const getSubSpent = (category, subName) => Math.abs(monthlyTransactions.filter(t => t.大項目 === category && t.中項目 === subName).reduce((sum, t) => sum + (parseInt(t.金額) || 0), 0));
   const getBarColor = (pct) => {
