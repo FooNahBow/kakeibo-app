@@ -1,17 +1,22 @@
 import { useState } from 'react';
-
 export default function TransactionList({ transactions }) {
   const [filter, setFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
-
   const categories = [...new Set(transactions.map(t => t.大項目).filter(Boolean))];
-
   const filtered = transactions.filter(t => {
     const matchText = !filter || t.内容?.includes(filter) || t.保有金融機関?.includes(filter);
     const matchCategory = !categoryFilter || t.大項目 === categoryFilter;
     return matchText && matchCategory;
   });
-
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "";
+    const d = new Date(dateStr);
+    if (isNaN(d)) return dateStr;
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,"0");
+    const day = String(d.getDate()).padStart(2,"0");
+    return y+"/"+m+"/"+day;
+  };
   const formatAmount = (amount) => {
     const num = parseInt(amount) || 0;
     const formatted = Math.abs(num).toLocaleString();
@@ -19,7 +24,6 @@ export default function TransactionList({ transactions }) {
       ? { text: `-¥${formatted}`, color: '#dc2626' }
       : { text: `+¥${formatted}`, color: '#2563eb' };
   };
-
   return (
     <div style={{ width: '100%' }}>
       <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
@@ -39,9 +43,7 @@ export default function TransactionList({ transactions }) {
           {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
         </select>
       </div>
-
       <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '8px' }}>{filtered.length}件</div>
-
       {filtered.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '40px', color: '#94a3b8' }}>
           <p>取引データがありません</p>
@@ -57,7 +59,7 @@ export default function TransactionList({ transactions }) {
                 padding: '12px 16px', borderBottom: '1px solid #f0f0f0', background: '#fff',
               }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <span style={{ fontSize: '11px', color: '#94a3b8' }}>{t.日付}</span>
+                  <span style={{ fontSize: '11px', color: '#94a3b8' }}>{formatDate(t.日付)}</span>
                   <span style={{ fontSize: '13px', fontWeight: '500', color: '#1e293b' }}>{t.内容}</span>
                   <span style={{ fontSize: '11px', color: '#94a3b8' }}>{t.保有金融機関}</span>
                 </div>
