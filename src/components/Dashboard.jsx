@@ -51,6 +51,20 @@ export default function Dashboard({ transactions, budgets, categories, loading }
     return `hsl(${Math.round(200-pct/80*170)},80%,45%)`;
   };
 
+  const renderLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, percent, value }) => {
+    const RADIAN = Math.PI / 180;
+    const radius = outerRadius + 30;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+    const anchor = x > cx ? 'start' : 'end';
+    return (
+      <text x={x} y={y} textAnchor={anchor} fill="#374151" dominantBaseline="central">
+        <tspan x={x} dy="-0.5em" fontSize={12}>{name} {(percent*100).toFixed(0)}%</tspan>
+        <tspan x={x} dy="1.4em" fontSize={10} fill="#6b7280">¥{value.toLocaleString()}</tspan>
+      </text>
+    );
+  };
+
   if (loading) return <div style={{textAlign:'center',padding:'40px',color:'#94a3b8'}}>読み込み中...</div>;
 
   return (
@@ -103,64 +117,74 @@ export default function Dashboard({ transactions, budgets, categories, loading }
         <h3 style={{fontSize:'14px',fontWeight:'700',color:'#1e3a5f',marginBottom:'16px'}}>支出内訳</h3>
         {pieData.length === 0 ? <p style={{color:'#94a3b8',fontSize:'13px'}}>データがありません</p> : (
           <>
+            <div onClick={(e) => { if (e.target.tagName === 'svg' || e.target.classList.contains('recharts-wrapper')) setShowOthers(false); }} style={{position:'relative'}}>
             <ResponsiveContainer width="100%" height={280}>
               <PieChart>
                 <Pie data={showOthers ? otherDetails.map(([name,value])=>({name,value})) : pieData}
-                  cx="50%" cy="50%" innerRadius={70} outerRadius={110} paddingAngle={3} dataKey="value"
-                  label={({name,percent}) => `${name} ${(percent*100).toFixed(0)}%`} labelLine={true}>
-                  {(showOthers ? otherDetails : pieData).map((_,i) => <Cell key={i} fill={PIE_COLORS[i%6]} />)}
+                  onClick={(data) => { if (data?.name === 'その他') setShowOthers(true); else if (showOthers) setShowOthers(false); }}
+                  cx="50%" cy="50%" innerRadius={30} outerRadius={110} paddingAngle={3} dataKey="value"
+                  label={renderLabel} labelLine={true}
+                  cursor="pointer">
+                  {(showOthers ? otherDetails.map(([n,v])=>({name:n,value:v})) : pieData).map((_,i) => <Cell key={i} fill={PIE_COLORS[i%6]} />)}
                 </Pie>
-                <Tooltip formatter={(value) => "¥"+value.toLocaleString()} />
+                
               </PieChart>
             </ResponsiveContainer>
-            {showOthers && <div style={{textAlign:'center',fontSize:11,color:'#94a3b8',marginTop:4}}>その他の内訳を表示中</div>}
-            <div style={{display:'flex',flexDirection:'column',gap:6,marginTop:16}}>
-              {pieData.map((entry,i) => (
-                <div key={entry.name}
-                  onClick={() => entry.name==='その他' && setShowOthers(s=>!s)}
-                  style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'6px 10px',borderRadius:6,
-                    background:entry.name==='その他'?'#f8fafc':'transparent',
-                    border:entry.name==='その他'?'1px solid #e2e8f0':'none',
-                    cursor:entry.name==='その他'?'pointer':'default'}}>
-                  <div style={{display:'flex',alignItems:'center',gap:8}}>
-                    <div style={{width:10,height:10,borderRadius:2,background:PIE_COLORS[i%6],flexShrink:0}} />
-                    <span style={{fontSize:13,color:'#1e293b'}}>{entry.name}</span>
-                    {entry.name==='その他' && <span style={{fontSize:10,color:'#94a3b8'}}>{showOthers?'▲ 閉じる':'▼ 内訳を見る'}</span>}
+            </div>
+            
+            <div style={{display:'flex',flexDirection:'column',gap:4,marginTop:16}}>
+              {sortedCats.map(([name, value],i) => {
+                const budget = getCatBudget(name);
+                const pct = budget > 0 ? Math.min((value/budget)*100,100) : 0;
+                const isOver = budget > 0 && value > budget;
+                const colorIdx = pieData.findIndex(p => p.name === name);
+                const color = colorIdx >= 0 ? PIE_COLORS[colorIdx%6] : '#cbd5e1';
+                const isOther = name === 'その他';
+                return (
+                  <div key={name} onClick={() => isOther && setShowOthers(s=>!s)}
+                    style={{padding:'6px 10px',borderRadius:6,cursor:isOther?'pointer':'default',background:isOther?'#f8fafc':'transparent',border:isOther?'1px solid #e2e8f0':'none'}}>
+                    <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom: budget>0 ? 4 : 0}}>
+                      <div style={{display:'flex',alignItems:'center',gap:8}}>
+                        <div style={{width:10,height:10,borderRadius:2,background:color,flexShrink:0}} />
+                        <span style={{fontSize:13,color:'#1e293b'}}>{name}</span>
+                      </div>
+                      <div style={{fontSize:13}}>
+                        <span style={{fontWeight:700,color:isOver?'#dc2626':'#1e293b'}}>¥{value.toLocaleString()}</span>
+                        {budget > 0 && <span style={{color:'#94a3b8',marginLeft:4}}>/ ¥{budget.toLocaleString()}</span>}
+                        {isOver && <span style={{color:'#dc2626',marginLeft:4,fontSize:11}}>超過</span>}
+                      </div>
+                    </div>
+                    <div style={{marginTop:4}}>
+                      <div style={{background:"#f0f0f0",borderRadius:4,height:8,overflow:"hidden",position:"relative"}}>
+                        <div style={{width:`${budget>0?pct:Math.min((value/maxAmount)*100,100)}%`,height:"100%",borderRadius:4,background:getBarColor(budget>0?pct:Math.min((value/maxAmount)*100,100)),transition:"width 0.3s"}} />
+                        {[20,40,60,80].map(t => <div key={t} style={{position:"absolute",top:0,left:`${t}%`,width:1,height:"100%",background:"rgba(255,255,255,0.5)"}} />)}
+                      </div>
+                      <div style={{display:"flex",justifyContent:"space-between",fontSize:9,color:"#cbd5e1",marginTop:1}}>
+                        {["0","20","40","60","80","100"].map(t => <span key={t}>{t}%</span>)}
+                      </div>
+                      {budget>0 && <div style={{textAlign:"right",fontSize:10,color:"#94a3b8",fontWeight:600,marginTop:1}}>{Math.round(pct)}%</div>}
+                    </div>
                   </div>
-                  <span style={{fontWeight:700,fontSize:13}}>¥{entry.value.toLocaleString()}</span>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
+          {showOthers && otherDetails.length > 0 && (
+              <div style={{marginTop:10,background:'#f8fafc',borderRadius:8,padding:'10px 14px',border:'1px solid #e2e8f0'}}>
+                <div style={{fontSize:11,fontWeight:700,color:'#64748b',marginBottom:6}}>その他の内訳</div>
+                {otherDetails.map(([cat,val]) => (
+                  <div key={cat} style={{display:'flex',justifyContent:'space-between',fontSize:12,padding:'3px 0',borderBottom:'1px solid #f0f0f0'}}>
+                    <span style={{color:'#475569'}}>{cat}</span>
+                    <span style={{fontWeight:600}}>¥{val.toLocaleString()}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </>
         )}
       </div>
 
-      <div style={{background:'#fff',borderRadius:'12px',padding:'24px',boxShadow:'0 1px 4px rgba(0,0,0,0.06)',marginBottom:'20px'}}>
-        <h3 style={{fontSize:'14px',fontWeight:'700',color:'#1e3a5f',marginBottom:'16px'}}>カテゴリ別支出</h3>
-        {sortedCats.length === 0 ? <p style={{color:'#94a3b8',fontSize:'13px'}}>データがありません</p> : (
-          sortedCats.map(([cat,amount]) => {
-            const budget = getCatBudget(cat);
-            const pct = budget > 0 ? Math.min((amount/budget)*100,100) : (amount/maxAmount)*100;
-            const isOver = budget > 0 && amount > budget;
-            return (
-              <div key={cat} style={{marginBottom:'12px'}}>
-                <div style={{display:'flex',justifyContent:'space-between',fontSize:'12px',marginBottom:'4px'}}>
-                  <span style={{color:'#1e293b'}}>{cat}</span>
-                  <div>
-                    <span style={{fontWeight:'600',color:isOver?'#dc2626':'#1e293b'}}>¥{amount.toLocaleString()}</span>
-                    {budget > 0 && <span style={{color:'#94a3b8',marginLeft:'4px'}}>/ ¥{budget.toLocaleString()}</span>}
-                    {isOver && <span style={{color:'#dc2626',marginLeft:'4px',fontSize:'11px'}}>超過</span>}
-                  </div>
-                </div>
-                <div style={{background:'#f0f0f0',borderRadius:'4px',height:'8px'}}>
-                  <div style={{width:`${pct}%`,height:'8px',borderRadius:'4px',background:getBarColor(budget>0?(amount/budget)*100:0)}} />
-                </div>
-              </div>
-            );
-          })
-        )}
-      </div>
+
     </div>
   );
 }

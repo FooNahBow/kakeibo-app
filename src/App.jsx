@@ -47,10 +47,11 @@ export default function App() {
     padding: '12px 16px', border: 'none', background: 'none', fontSize: '12px',
     cursor: 'pointer', borderBottom: active ? '2px solid #1e3a5f' : '2px solid transparent',
     color: active ? '#1e3a5f' : '#64748b', fontWeight: active ? '600' : 'normal',
+    whiteSpace: 'nowrap', flexShrink: 0, borderRadius: '6px',
   });
 
   return (
-    <div style={{ maxWidth: '900px', margin: '0 auto', minHeight: '100vh', background: '#f0f4f8', fontFamily: 'BIZ UDPGothic, Yu Gothic UI, Hiragino Kaku Gothic ProN, sans-serif', WebkitFontSmoothing: "antialiased", MozOsxFontSmoothing: "grayscale" }}>
+    <div style={{ maxWidth: '1200px', margin: '0 auto', minHeight: '100vh', background: '#f0f4f8', overflow: 'hidden', fontFamily: 'BIZ UDPGothic, Yu Gothic UI, Hiragino Kaku Gothic ProN, sans-serif', WebkitFontSmoothing: "antialiased", MozOsxFontSmoothing: "grayscale" }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 24px', background: '#1e3a5f', color: '#fff' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <span style={{ fontSize: '24px' }}>💰</span>
@@ -58,7 +59,7 @@ export default function App() {
         </div>
       </header>
 
-      <nav style={{ display: 'flex', background: '#fff', borderBottom: '1px solid #e2e8f0', padding: '0 16px', overflowX: 'auto' }}>
+      <nav style={{ display: 'flex', background: '#fff', borderBottom: '1px solid #e2e8f0', padding: '0 16px', overflowX: 'auto', flexWrap: 'nowrap', minHeight: 44, borderRadius: '0 0 12px 12px' }}>
         <button style={btnStyle(activeTab === 'dashboard')} onClick={() => setActiveTab('dashboard')}>📊 ダッシュボード</button>
         <button style={btnStyle(activeTab === 'import')} onClick={() => setActiveTab('import')}>📥 インポート</button>
         <button style={btnStyle(activeTab === 'list')} onClick={() => { setActiveTab('list'); loadTransactions(); }}>📋 取引一覧</button>
@@ -67,7 +68,7 @@ export default function App() {
         <button style={btnStyle(activeTab === 'savings')} onClick={() => setActiveTab('savings')}>💰 積立管理</button>
       </nav>
 
-      <main style={{ padding: '24px' }}>
+      <main style={{ padding: '24px', minHeight: 'calc(100vh - 112px)' }}>
         {activeTab === 'dashboard' && (
           <Dashboard transactions={transactions} budgets={{}} categories={categories} loading={loading} />
         )}
