@@ -4,6 +4,7 @@ import CsvImport from './components/CsvImport';
 import TransactionList from './components/TransactionList';
 import Dashboard from './components/Dashboard';
 import CategoryManager from './components/CategoryManager';
+import SavingsManager, { getSavingsForMonth } from './components/SavingsManager';
 import {
   initGoogleAuth, signIn, signOut,
   getTransactions, initializeSpreadsheet, isSignedIn,
@@ -14,6 +15,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [loading, setLoading] = useState(false);
 
+  const [savingsPlans, setSavingsPlans] = useState(() => { try { return JSON.parse(localStorage.getItem('kakeibo_savings') || '[]'); } catch { return []; } });
   const [categories, setCategories] = useState(() => { try { const s = localStorage.getItem("kakeibo_categories"); return s ? JSON.parse(s) : []; } catch { return []; } });
 
   useEffect(() => {
@@ -28,6 +30,7 @@ export default function App() {
     try {
       const data = await getTransactions();
       setTransactions(data);
+      try { localStorage.setItem('kakeibo_transactions', JSON.stringify(data)); } catch {}
     } finally {
       setLoading(false);
     }
@@ -61,6 +64,7 @@ export default function App() {
         <button style={btnStyle(activeTab === 'list')} onClick={() => { setActiveTab('list'); loadTransactions(); }}>📋 取引一覧</button>
         <button style={btnStyle(activeTab === 'budget')} onClick={() => setActiveTab('budget')}>🎯 予算管理</button>
         <button style={btnStyle(activeTab === 'category')} onClick={() => setActiveTab('category')}>🏷️ カテゴリ</button>
+        <button style={btnStyle(activeTab === 'savings')} onClick={() => setActiveTab('savings')}>💰 積立管理</button>
       </nav>
 
       <main style={{ padding: '24px' }}>
@@ -82,13 +86,18 @@ export default function App() {
               <h2 style={{ fontSize: '16px', fontWeight: '700', color: '#1e3a5f', margin: 0 }}>取引一覧</h2>
               <button onClick={loadTransactions} style={{ padding: '6px 12px', background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '12px' }}>🔄 更新</button>
             </div>
-            {loading ? <div style={{ textAlign: 'center', padding: '40px', color: '#94a3b8' }}>読み込み中...</div> : <TransactionList transactions={transactions} />}
+            {loading ? <div style={{ textAlign: 'center', padding: '40px', color: '#94a3b8' }}>読み込み中...</div> : <TransactionList transactions={transactions} savingsPlans={savingsPlans} />}
           </div>
         )}
         {activeTab === 'budget' && (
           <div style={{ background: '#fff', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
             <h2 style={{ fontSize: '16px', fontWeight: '700', color: '#1e3a5f', marginBottom: '16px' }}>予算管理</h2>
             <BudgetManager transactions={transactions} categories={categories} setCategories={saveCategories} />
+          </div>
+        )}
+        {activeTab === 'savings' && (
+          <div style={{ background: '#fff', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+            <SavingsManager categories={categories} />
           </div>
         )}
         {activeTab === 'category' && (

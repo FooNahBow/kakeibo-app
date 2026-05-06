@@ -1,10 +1,18 @@
-import { useState } from 'react';
-export default function TransactionList({ transactions }) {
+import { useState, useEffect } from 'react';
+const LINK_KEY = "kakeibo_tx_links";
+export default function TransactionList({ transactions, savingsPlans = [] }) {
+  const [txLinks, setTxLinks] = useState(() => { try { return JSON.parse(localStorage.getItem(LINK_KEY) || '{}'); } catch { return {}; } });
+  function setLink(txId, planId) {
+    const next = { ...txLinks, [txId]: planId };
+    setTxLinks(next);
+    localStorage.setItem(LINK_KEY, JSON.stringify(next));
+  }
   const [filter, setFilter] = useState('');
+  const normalize = (s) => (s || '').normalize('NFKC').toLowerCase();
   const [categoryFilter, setCategoryFilter] = useState('');
   const categories = [...new Set(transactions.map(t => t.大項目).filter(Boolean))];
   const filtered = transactions.filter(t => {
-    const matchText = !filter || t.内容?.includes(filter) || t.保有金融機関?.includes(filter);
+    const matchText = !filter || normalize(t.内容).includes(normalize(filter)) || normalize(t.保有金融機関).includes(normalize(filter));
     const matchCategory = !categoryFilter || t.大項目 === categoryFilter;
     return matchText && matchCategory;
   });
@@ -65,9 +73,19 @@ export default function TransactionList({ transactions }) {
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
                   <span style={{ fontSize: '14px', fontWeight: '600', color: amount.color }}>{amount.text}</span>
-                  <div style={{ display: 'flex', gap: '4px' }}>
+                  <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                     {t.内容 !== '振替' && t.大項目 && <span style={{ fontSize: '10px', padding: '2px 6px', borderRadius: '4px', background: '#eff6ff', color: '#2563eb' }}>{t.大項目}</span>}
                     {t.内容 !== '振替' && t.中項目 && <span style={{ fontSize: '10px', padding: '2px 6px', borderRadius: '4px', background: '#f0fdf4', color: '#16a34a' }}>{t.中項目}</span>}
+                    {savingsPlans.length > 0 && (
+                      <select
+                        value={txLinks[t.ID || i] || ''}
+                        onChange={e => setLink(t.ID || i, e.target.value)}
+                        style={{ fontSize: '10px', padding: '2px 4px', borderRadius: '4px', border: '1px solid #e2e8f0', color: '#64748b', background: '#f8fafc' }}
+                      >
+                        <option value="">積立未設定</option>
+                        {savingsPlans.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                      </select>
+                    )}
                   </div>
                 </div>
               </div>
