@@ -1,3 +1,4 @@
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { isInMonth, getAvailableMonths } from '../utils/dateUtils';
 import { useState } from 'react';
 
@@ -66,6 +67,26 @@ export default function Dashboard({ transactions, budgets, categories, loading }
         ))}
       </div>
 
+
+
+     
+      {/* 円グラフ */}
+      <div style={{ background: '#fff', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', marginBottom: '20px' }}>
+        <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#1e3a5f', marginBottom: '16px' }}>支出内訳</h3>
+        {sortedCategories.length === 0 ? (
+          <p style={{ color: '#94a3b8', fontSize: '13px' }}>データがありません</p>
+        ) : (
+          <ResponsiveContainer width="100%" height={320}>
+            <PieChart>
+              <Pie data={sortedCategories.map(([name, value]) => ({ name, value }))} cx="50%" cy="50%" innerRadius={60} outerRadius={110} paddingAngle={2} dataKey="value">
+                {sortedCategories.map((_, i) => <Cell key={i} fill={colors[i % colors.length]} />)}
+              </Pie>
+              <Tooltip formatter={(value) => "¥" + value.toLocaleString()} />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        )}
+      </div>
       {/* カテゴリ別支出グラフ */}
       <div style={{ background: '#fff', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', marginBottom: '20px' }}>
         <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#1e3a5f', marginBottom: '16px' }}>カテゴリ別支出</h3>
