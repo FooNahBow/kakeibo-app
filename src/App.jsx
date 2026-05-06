@@ -47,7 +47,7 @@ export default function App() {
   });
 
   return (
-    <div style={{ maxWidth: '900px', margin: '0 auto', minHeight: '100vh', background: '#f0f4f8', fontFamily: 'M PLUS Rounded 1c, Hiragino Sans, sans-serif' }}>
+    <div style={{ maxWidth: '900px', margin: '0 auto', minHeight: '100vh', background: '#f0f4f8', fontFamily: 'BIZ UDPGothic, Yu Gothic UI, Hiragino Kaku Gothic ProN, sans-serif', WebkitFontSmoothing: "antialiased", MozOsxFontSmoothing: "grayscale" }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 24px', background: '#1e3a5f', color: '#fff' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <span style={{ fontSize: '24px' }}>💰</span>
