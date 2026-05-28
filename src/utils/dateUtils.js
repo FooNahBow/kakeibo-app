@@ -30,14 +30,28 @@ export function isInMonth(dateStr, yearMonth) {
   return d >= start && d <= end;
 }
 
+export function getMonthForDate(dateStr) {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  if (isNaN(d)) return null;
+  // 日付が属する月を営業日ベースで判定（最大24ヶ月分探索）
+  const now = new Date();
+  for (let i = 0; i < 24; i++) {
+    const month = now.getMonth() + 1 - i;
+    const year = now.getFullYear() + Math.floor((now.getMonth() - i) / 12);
+    const ym = `${year}-${String(((month - 1 + 12) % 12) + 1).padStart(2, '0')}`;
+    const { start, end } = getMonthRange(ym);
+    if (d >= start && d <= end) return ym;
+  }
+  return null;
+}
+
 export function getAvailableMonths(transactions) {
   const months = new Set();
   transactions.forEach(t => {
     if (!t.日付) return;
-    const d = new Date(t.日付);
-    if (isNaN(d)) return;
-    const ym = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
-    months.add(ym);
+    const ym = getMonthForDate(t.日付);
+    if (ym) months.add(ym);
   });
   return [...months].sort().reverse();
 }
